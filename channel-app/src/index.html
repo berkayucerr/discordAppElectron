@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Kanal Yönetimi</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h2>Sunucular</h2>
+            <div id="serverList"></div>
+            <button class="add-button" id="addServerButton">
+                <span>+</span> Yeni Sunucu
+            </button>
+        </div>
+
+        <div class="main-content">
+            <!-- Tab Menüsü -->
+            <div class="tabs">
+                <button class="tab-button active" data-tab="channels">Kanallar</button>
+                <button class="tab-button" data-tab="settings">Ayarlar</button>
+                <button class="tab-button" data-tab="roles">Roller</button>
+            </div>
+
+            <!-- Kanallar Tab -->
+            <div id="channelsTab" class="tab-content active">
+                <div class="content-header">
+                    <h3>Kanallar</h3>
+                    <div id="connectionStatus" class="status-indicator">Bağlantı Bekleniyor...</div>
+                    <button class="add-button" onclick="channelManager.showCreateChannelModal()">
+                        <span>+</span> Yeni Kanal
+                    </button>
+                </div>
+                <div id="channelContainer"></div>
+            </div>
+
+            <!-- Ayarlar Tab -->
+            <div id="settingsTab" class="tab-content">
+                <div class="content-header">
+                    <h3>Sunucu Ayarları</h3>
+                    <button class="add-button" id="addSettingButton">
+                        <span>+</span> Yeni Ayar
+                    </button>
+                </div>
+                <div id="settingsContainer"></div>
+            </div>
+
+            <!-- Roller Tab -->
+            <div id="rolesTab" class="tab-content">
+                <div class="content-header">
+                    <h3>Roller</h3>
+                    <button class="add-button" id="addRoleButton">
+                        <span>+</span> Yeni Rol
+                    </button>
+                </div>
+                <div id="rolesContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/channelManager.js"></script>
+    <script src="js/serverManager.js"></script>
+    <script src="js/serverSettings.js"></script>
+    <script src="js/serverRoles.js"></script>
+    <script src="js/renderer.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Tab click olaylarını dinle
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const tabName = e.target.getAttribute('data-tab');
+                    showTab(tabName);
+                });
+            });
+
+            // Ayar ekleme butonuna click event listener ekle
+            const addSettingButton = document.getElementById('addSettingButton');
+            if (addSettingButton) {
+                addSettingButton.addEventListener('click', () => {
+                    if (serverSettings) {
+                        serverSettings.showAddSettingModal();
+                    }
+                });
+            }
+
+            // Rol ekleme butonu için event listener
+            const addRoleButton = document.getElementById('addRoleButton');
+            if (addRoleButton) {
+                addRoleButton.addEventListener('click', () => {
+                    if (typeof serverRoles !== 'undefined' && serverRoles.showAddRoleModal) {
+                        serverRoles.showAddRoleModal();
+                    } else {
+                        console.error('serverRoles objesi veya showAddRoleModal fonksiyonu bulunamadı');
+                    }
+                });
+            }
+
+            // İlk yüklemede channels tabını göster
+            showTab('channels');
+
+            const addServerButton = document.getElementById('addServerButton');
+            if (addServerButton) {
+                addServerButton.addEventListener('click', () => {
+                    if (typeof serverManager !== 'undefined' && serverManager.showCreateServerModal) {
+                        serverManager.showCreateServerModal();
+                    } else {
+                        console.error('serverManager objesi veya showCreateServerModal fonksiyonu bulunamadı');
+                    }
+                });
+            }
+
+            // Kanal tıklama olayını dinle
+            const channelContainer = document.getElementById('channelContainer');
+            if (channelContainer) {
+                channelContainer.addEventListener('click', (e) => {
+                    const channelElement = e.target.closest('.channel-item');
+                    if (channelElement) {
+                        const channelId = channelElement.getAttribute('data-channel-id');
+                        if (channelId) {
+                            connectToVoiceChannel(channelId);
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
