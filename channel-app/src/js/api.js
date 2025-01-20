@@ -1,4 +1,5 @@
 const API_URL = 'http://127.0.0.1:8081';
+const AUTH_API_URL = 'http://127.0.0.1:8082';
 
 class Api {
     async getServers() {
@@ -33,7 +34,18 @@ class Api {
             throw error;
         }
     }
-
+    async loadChannelMessages(channelId) {
+        try {
+            const response = await fetch(`http://127.0.0.1:8080/api/messages/${channelId}`);
+            if (!response.ok) {
+                throw new Error('Mesajlar yüklenemedi');
+            }
+            return await response.json();
+        } catch (error) {
+            console.error('Mesajları yükleme hatası:', error);
+            throw error;
+        }
+    }
     async deleteServer(serverId) {
         try {
             const response = await fetch(`${API_URL}/api/servers/${serverId}`, {
@@ -277,12 +289,188 @@ class Api {
             throw error;
         }
     }
+    
+    async joinVoiceChannel(channelId, userId) {
+        try {
+            const response = await fetch(`${API_URL}/api/channelMembers/${channelId}?userId=${encodeURIComponent(userId)}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Ses kanalına katılma başarısız oldu');
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Ses kanalına katılırken hata:', error);
+            throw error;
+        }
+    }
+
+    async leaveVoiceChannel(channelId, userId) {
+        try {
+            const response = await fetch(`${API_URL}/api/channelMembers/${channelId}/leave?userId=${encodeURIComponent(userId)}`, {
+                method: 'POST'
+            });
+            return response.ok;
+        } catch (error) {
+            console.error('Ses kanalından ayrılırken hata:', error);
+            throw error;
+        }
+    }
+
+    async getVoiceChannelUsers(channelId) {
+        try {
+            const response = await fetch(`${API_URL}/api/channelMembers/${channelId}`);
+            return await response.json();
+        } catch (error) {
+            console.error('Kanal üyeleri alınırken hata:', error);
+            throw error;
+        }
+    }
 
     async createServer({ name, description }) {
         try {
             const payload = {
                 name: name,
                 description: description
+            };
+
+            // CURL komutunu console'a yazdır
+            console.log(`curl -X POST ${API_URL}/api/servers \
+-H "Content-Type: application/json" \
+-d '${JSON.stringify(payload)}'`);
+
+            const response = await fetch(`${API_URL}/api/servers`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Sunucu oluşturma hatası: ${response.status} - ${errorText}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Sunucu oluşturulurken hata:', error);
+            throw error;
+        }
+    }
+
+    async getChannelMembers(channelId) {
+        try {
+            const response = await fetch(`${API_URL}/api/channelMembers/${channelId}`);
+            return await response.json();
+        } catch (error) {
+            console.error('Kanal üyeleri alınırken hata:', error);
+            throw error;
+        }
+    }
+
+    async getVoiceChannelUsers(channelId) {
+        try {
+            const response = await fetch(`${API_URL}/api/channelMembers/${channelId}`);
+            return await response.json();
+        } catch (error) {
+            console.error('Kanal üyeleri alınırken hata:', error);
+            throw error;
+        }
+    }
+
+    async register(name, username, email, password) {
+        try {
+            const response = await fetch(`${AUTH_API_URL}/auth/register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name,
+                    username,
+                    email,
+                    password
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Kayıt işlemi başarısız oldu');
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Kayıt olurken hata:', error);
+            throw error;
+        }
+    }
+
+    async login(username, password) {
+        try {
+            const response = await fetch(`${AUTH_API_URL}/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    username,
+                    password
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Giriş işlemi başarısız oldu');
+            }
+
+            const data = await response.json();
+            console.log(data.user);
+            // Token'ı localStorage'a kaydet
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+
+            return data;
+        } catch (error) {
+            console.error('Giriş yapılırken hata:', error);
+            throw error;
+        }
+    }
+
+    async logout() {
+        try {
+            // LocalStorage'dan kullanıcı bilgilerini temizle
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            
+            return true;
+        } catch (error) {
+            console.error('Çıkış yapılırken hata:', error);
+            throw error;
+        }
+    }
+
+    // Tüm isteklerde kullanılacak yardımcı metod
+    async getAuthHeaders() {
+        const token = localStorage.getItem('token');
+        return {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        };
+    }
+
+    async updateServer({ id, name, description, ownerId }) {
+        try {
+            const payload = {
+                id: id,
+                name: name,
+                description: description,
+                ownerId: ownerId
             };
 
             // CURL komutunu console'a yazdır

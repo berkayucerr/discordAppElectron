@@ -51,6 +51,5 @@ document.addEventListener('DOMContentLoaded', () => {
     channelManager = new ChannelManager();
     serverSettings = new ServerSettings(currentServerId);
     serverRoles = new ServerRoles(currentServerId);
-    
     serverManager.loadServers();
 });

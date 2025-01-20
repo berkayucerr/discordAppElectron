@@ -3,103 +3,232 @@
 <head>
     <title>Kanal Yönetimi</title>
     <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body>
-    <div class="container">
-        <div class="sidebar">
-            <h2>Sunucular</h2>
-            <div id="serverList"></div>
-            <button class="add-button" id="addServerButton">
-                <span>+</span> Yeni Sunucu
-            </button>
-        </div>
-
-        <div class="main-content">
-            <!-- Tab Menüsü -->
-            <div class="tabs">
-                <button class="tab-button active" data-tab="channels">Kanallar</button>
-                <button class="tab-button" data-tab="settings">Ayarlar</button>
-                <button class="tab-button" data-tab="roles">Roller</button>
+    <!-- Giriş/Kayıt Ekranı -->
+    <div id="authContainer" class="auth-container">
+        <div class="auth-box">
+            <!-- Giriş Formu -->
+            <div id="loginForm" class="auth-form">
+                <h2>Giriş Yap</h2>
+                <input type="username" placeholder="username" id="loginUsername">
+                <input type="password" placeholder="Şifre" id="loginPassword">
+                <button onclick="handleLogin()">Giriş Yap</button>
+                <p>Hesabın yok mu? <a href="#" onclick="toggleAuthForms()">Kayıt ol</a></p>
             </div>
 
-            <!-- Kanallar Tab -->
-            <div id="channelsTab" class="tab-content active">
-                <div class="content-header">
-                    <h3>Kanallar</h3>
-                    <div id="connectionStatus" class="status-indicator">Bağlantı Bekleniyor...</div>
-                    <button class="add-button" onclick="channelManager.showCreateChannelModal()">
-                        <span>+</span> Yeni Kanal
-                    </button>
-                </div>
-                <div id="channelContainer"></div>
-            </div>
-
-            <!-- Ayarlar Tab -->
-            <div id="settingsTab" class="tab-content">
-                <div class="content-header">
-                    <h3>Sunucu Ayarları</h3>
-                    <button class="add-button" id="addSettingButton">
-                        <span>+</span> Yeni Ayar
-                    </button>
-                </div>
-                <div id="settingsContainer"></div>
-            </div>
-
-            <!-- Roller Tab -->
-            <div id="rolesTab" class="tab-content">
-                <div class="content-header">
-                    <h3>Roller</h3>
-                    <button class="add-button" id="addRoleButton">
-                        <span>+</span> Yeni Rol
-                    </button>
-                </div>
-                <div id="rolesContainer"></div>
+            <!-- Kayıt Formu -->
+            <div id="registerForm" class="auth-form" style="display: none;">
+                <h2>Kayıt Ol</h2>
+                <input type="text" placeholder="İsim" id="registerName">
+                <input type="text" placeholder="Kullanıcı Adı" id="registerUsername">
+                <input type="email" placeholder="E-posta" id="registerEmail">
+                <input type="password" placeholder="Şifre" id="registerPassword">
+                <input type="password" placeholder="Şifre Tekrar" id="registerPasswordConfirm">
+                <button onclick="handleRegister()">Kayıt Ol</button>
+                <p>Zaten hesabın var mı? <a href="#" onclick="toggleAuthForms()">Giriş yap</a></p>
             </div>
         </div>
     </div>
 
-    <script src="js/api.js"></script>
-    <script src="js/channelManager.js"></script>
-    <script src="js/serverManager.js"></script>
-    <script src="js/serverSettings.js"></script>
-    <script src="js/serverRoles.js"></script>
-    <script src="js/renderer.js"></script>
+    <!-- Ana Uygulama İçeriği -->
+    <div id="mainContent" class="container" style="display: none;">
+        <!-- Sağ Tık Menüsü -->
+        <div id="contextMenu" class="context-menu">
+            <ul>
+                <li id="deleteServerOption">Sunucuyu Sil</li>
+            </ul>
+        </div>
+
+        <div class="container">
+            <!-- Sunucu Listesi Sidebar -->
+            <div class="server-sidebar">
+                <div id="serverList"></div>
+                <button class="add-button" id="addServerButton">
+                    <span>+</span>
+                </button>
+            </div>
+
+            <!-- Kanal Listesi Sidebar -->
+            <div class="channel-sidebar">
+                <div class="server-header">
+                    <h2>Sunucu Adı</h2>
+                </div>
+                
+                <!-- Tab Menüsü -->
+                <div class="channel-section">
+                    <div class="section-header">
+                        <span>METİN KANALLARI</span>
+                        <button class="add-channel-btn" onclick="channelManager.showCreateChannelModal()">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                    <div id="channelContainer"></div>
+                </div>
+
+                <div class="user-controls">
+                    <div class="user-info">
+                        <div class="user-avatar">
+                            <img src="https://www.iconpacks.net/icons/2/free-user-icon-3296-thumb.png" alt="Kullanıcı">
+                        </div>
+                        <div class="user-details">
+                            <span id="userUsername" class="username">Kullanıcı Adı</span>
+                            <span class="status">Çevrimiçi</span>
+                        </div>
+                    </div>
+                    <div class="audio-controls">
+                        <button class="mic-btn"><i class="fas fa-microphone"></i></button>
+                        <button class="settings-btn"><i class="fas fa-cog"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ana İçerik Alanı -->
+            <div class="main-content">
+                <div class="content-header">
+                    <h3># kanal-adı</h3>
+                    <div id="connectionStatus" class="status-indicator">Bağlantı Bekleniyor...</div>
+                </div>
+                
+                <div class="chat-container">
+                    <div id="messageArea" class="message-area"></div>
+                    <div class="message-input-container">
+                        <input type="text" placeholder="Mesaj gönder..." class="message-input">
+                        <button class="send-button"><i class="fas fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Üye Listesi Sidebar -->
+            <div class="members-sidebar">
+                <div class="members-header">
+                    <h3>Üyeler</h3>
+                </div>
+                <div class="members-list">
+                    <!-- Üyeler buraya gelecek -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .auth-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #36393f;
+        }
+
+        .auth-box {
+            background-color: #2f3136;
+            padding: 2rem;
+            border-radius: 5px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .auth-form h2 {
+            color: #fff;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .auth-form input {
+            padding: 10px;
+            border-radius: 3px;
+            border: 1px solid #202225;
+            background-color: #40444b;
+            color: #fff;
+        }
+
+        .auth-form button {
+            padding: 10px;
+            background-color: #7289da;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .auth-form button:hover {
+            background-color: #677bc4;
+        }
+
+        .auth-form p {
+            text-align: center;
+            color: #72767d;
+        }
+
+        .auth-form a {
+            color: #7289da;
+            text-decoration: none;
+        }
+
+        .auth-form a:hover {
+            text-decoration: underline;
+        }
+    </style>
 
     <script>
+        function toggleAuthForms() {
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            
+            if (loginForm.style.display === 'none') {
+                loginForm.style.display = 'flex';
+                registerForm.style.display = 'none';
+            } else {
+                loginForm.style.display = 'none';
+                registerForm.style.display = 'flex';
+            }
+        }
+
+        async function handleLogin() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            try {
+                const responseJson = await api.login(username, password);
+                
+                // Kullanıcı adını güncelle
+                document.getElementById('userUsername').textContent = responseJson.user.username;
+                
+                // Auth container'ı gizle ve main content'i göster
+                document.getElementById('authContainer').style.display = 'none';
+                document.getElementById('mainContent').style.display = 'flex';
+                
+            } catch (error) {
+                alert(error.message || 'Giriş yapılırken bir hata oluştu');
+            }
+        }
+
+        function handleRegister() {
+            const name = document.getElementById('registerName').value;
+            const username = document.getElementById('registerUsername').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+
+            if (password !== passwordConfirm) {
+                alert('Şifreler eşleşmiyor!');
+                return;
+            }
+
+            api.register(name, username, email, password);
+            toggleAuthForms(); // Kayıt başarılı ise giriş formuna dön
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
-            // Tab click olaylarını dinle
-            document.querySelectorAll('.tab-button').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    const tabName = e.target.getAttribute('data-tab');
-                    showTab(tabName);
-                });
-            });
-
-            // Ayar ekleme butonuna click event listener ekle
-            const addSettingButton = document.getElementById('addSettingButton');
-            if (addSettingButton) {
-                addSettingButton.addEventListener('click', () => {
-                    if (serverSettings) {
-                        serverSettings.showAddSettingModal();
-                    }
-                });
-            }
-
-            // Rol ekleme butonu için event listener
-            const addRoleButton = document.getElementById('addRoleButton');
-            if (addRoleButton) {
-                addRoleButton.addEventListener('click', () => {
-                    if (typeof serverRoles !== 'undefined' && serverRoles.showAddRoleModal) {
-                        serverRoles.showAddRoleModal();
-                    } else {
-                        console.error('serverRoles objesi veya showAddRoleModal fonksiyonu bulunamadı');
-                    }
-                });
-            }
-
-            // İlk yüklemede channels tabını göster
-            showTab('channels');
-
             const addServerButton = document.getElementById('addServerButton');
             if (addServerButton) {
                 addServerButton.addEventListener('click', () => {
@@ -124,7 +253,42 @@
                     }
                 });
             }
+
+            // Context menu için değişkenler
+            const contextMenu = document.getElementById('contextMenu');
+            const serverList = document.getElementById('serverList');
+
+            // Sayfa herhangi bir yerine tıklandığında context menu'yü gizle
+            document.addEventListener('click', () => {
+                contextMenu.style.display = 'none';
+            });
+
+            // Sunucu listesinde sağ tık olayını dinle
+            serverList.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                const serverElement = e.target.closest('.server-item');
+                if (serverElement) {
+                    contextMenu.style.display = 'block';
+                    contextMenu.style.left = `${e.pageX}px`;
+                    contextMenu.style.top = `${e.pageY}px`;
+
+                    const deleteOption = document.getElementById('deleteServerOption');
+                    deleteOption.onclick = () => {
+                        const serverId = serverElement.getAttribute('data-server-id');
+                        serverManager.handleDeleteServer(serverId);
+                        contextMenu.style.display = 'none';
+                    };
+                }
+            });
         });
     </script>
+
+    <!-- Diğer script dosyalarınız -->
+    <script src="js/api.js"></script>
+    <script src="js/channelManager.js"></script>
+    <script src="js/serverManager.js"></script>
+    <script src="js/serverSettings.js"></script>
+    <script src="js/serverRoles.js"></script>
+    <script src="js/renderer.js"></script>
 </body>
 </html>
